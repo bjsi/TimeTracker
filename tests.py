@@ -1,8 +1,8 @@
-from rx.testing import TestScheduler, ReactiveTest
+from rx.testing import (TestScheduler, ReactiveTest)
 import unittest
-from rx import operators as op
-from rx_utils import spy
-
+from rx import operators as ops
+from rx_utils import pairwise_buffer, merge_streams
+from rx_debug import spy
 
 on_next = ReactiveTest.on_next
 on_completed = ReactiveTest.on_completed
@@ -14,28 +14,72 @@ created = ReactiveTest.created
 
 
 class TestSample(unittest.TestCase):
+    # def test_pairwise_buffer(self):
+    #     scheduler: TestScheduler = TestScheduler()
+    #     xs = scheduler.create_hot_observable(
+    #         on_next(100, 1),
+    #         on_next(210, 2),
+    #         on_next(240, 3),
+    #         on_next(280, 4),
+    #         on_next(320, 5),
+    #         on_next(350, 6),
+    #         on_completed(3),
+    #     )
 
-    def test_hello_word(self):
-        scheduler = TestScheduler()
-        xs = scheduler.create_hot_observable(on_next(150, 1), on_next(210, 2), on_next(
-            220, 3), on_next(230, 4), on_next(240, 5), on_completed(250))
-        i = [0]
-        sum = [2 + 3 + 4 + 5]
-        completed = [False]
+    #     def create():
+    #         return xs.pipe(pairwise_buffer, ops.map(lambda x: str(x)))
+
+    #     res = scheduler.start(create)
+    #     assert res.messages == [
+    #         on_next(240, str([2, 3])),
+    #         on_next(280, str([3, 4])),
+    #         on_next(320, str([4, 5])),
+    #         on_next(350, str([5, 6])),
+    #     ]
+
+    def test_merged_pairwise_buffer(self):
+        scheduler: TestScheduler = TestScheduler()
+        xs = scheduler.create_hot_observable(
+            on_next(100, 1),
+            on_next(210, 2),
+            on_next(240, 3),
+            on_next(280, 4),
+            on_next(320, 5),
+            on_next(350, 6),
+            on_completed(3),
+        )
+
+        ys = scheduler.create_hot_observable(
+            on_next(101, 1),
+            on_next(211, 2),
+            on_next(241, 3),
+            on_next(281, 4),
+            on_next(321, 5),
+            on_next(351, 6),
+            on_completed(3),
+        )
 
         def create():
-            def on_next(x):
-                i[0] += 1
-                sum[0] -= x
-
-            def on_completed():
-                completed[0] = True
-            return xs.pipe(
-                op.do_action(on_next=on_next, on_completed=on_completed),
-            )
+            return merge_streams(xs, ys).pipe(spy)
 
         scheduler.start(create)
 
-        self.assertEqual(4, i[0])
-        self.assertEqual(0, sum[0])
-        assert(completed[0])
+    # def test_spy(self):
+    #     """
+    #     Run to test the spy function.
+    #     """
+    #     scheduler: TestScheduler = TestScheduler()
+    #     xs = scheduler.create_hot_observable(
+    #         on_next(100, 1),
+    #         on_next(210, 2),
+    #         on_next(240, 3),
+    #         on_next(280, 4),
+    #         on_next(320, 5),
+    #         on_next(350, 6),
+    #         on_completed(3),
+    #     )
+
+    #     def create():
+    #         return xs.pipe(pairwise_buffer, ops.map(lambda x: str(x)), spy)
+
+    #     scheduler.start(create)
