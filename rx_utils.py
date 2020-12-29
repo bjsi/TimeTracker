@@ -11,4 +11,4 @@ def pairwise_buffer(obs: Observable) -> Observable:
 
 # [[1,2,3],[1,2,3],[...]] => [1,1,2,2,3,3]
 def merge_streams(*obs: Observable) -> Observable:
-    return rx.merge(obs)
+    return rx.merge(*obs).pipe(ops.share())
