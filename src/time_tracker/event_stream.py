@@ -24,6 +24,7 @@ class Events:
     mouse_moved: Subject = Subject()
     keyboard_pressed: Subject = Subject()
     mouse_click: Subject = Subject()
+    mouse_scroll: Subject = Subject()
 
     # Merged event stream
     merged_stream: observable

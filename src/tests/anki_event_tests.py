@@ -1,10 +1,9 @@
 from rx.testing import (TestScheduler, ReactiveTest)
 import unittest
 from rx import operators as ops
-from rx_utils import pairwise_buffer, merge_streams, emit_when
-from rx_debug import spy
+from time_tracker.rx_utils import pairwise_buffer, merge_streams, emit_when
 from rx.core.observable import Observable
-from anki_event import MouseEvent, KeyboardEvent, QuestionShownEvent, AnkiEventPair
+from time_tracker.anki_event import MouseEvent, KeyboardEvent, QuestionShownEvent, AnkiEventPair
 from typing import List, Sequence
 
 on_next = ReactiveTest.on_next
@@ -148,6 +147,8 @@ class TestAnkiEvents(unittest.TestCase):
             return w.pipe(ops.flat_map(lambda x: x.pipe(ops.to_list())))
 
         res = self.scheduler.start(create)
+        print(res.messages)
+        # TODO:
 
 
 if __name__ == "__main__":

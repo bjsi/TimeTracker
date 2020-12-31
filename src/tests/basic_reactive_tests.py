@@ -1,9 +1,8 @@
 from rx.testing import (TestScheduler, ReactiveTest)
-from anki_event import AnkiEvent
+from time_tracker.anki_event import AnkiEvent
 import unittest
 from rx import operators as ops
-from rx_utils import pairwise_buffer, merge_streams
-from rx_debug import spy
+from time_tracker.rx_utils import pairwise_buffer, merge_streams
 from rx.core.observable import Observable
 
 on_next = ReactiveTest.on_next

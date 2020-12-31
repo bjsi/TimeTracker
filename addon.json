@@ -1,0 +1,16 @@
+{
+    "display_name": "Time Tracker",
+    "module_name": "time_tracker",
+    "repo_name": "TimeTracker",
+    "ankiweb_id": "",
+    "author": "bjsi",
+    "contact": "https://experimental-learning.com",
+    "homepage": "https://github.com/bjsi/TimeTracker",
+    "copyright_start": 2020,
+    "tags": "stats time tracking data activity watch",
+    "conflicts": [
+    ],
+    "targets": [
+        "anki21"
+    ]
+}

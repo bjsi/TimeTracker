@@ -42,6 +42,9 @@ class QuestionShownEvent(AnkiEvent):
 
 
 class AnkiEventPair:
+    """
+    Represents a pair of anki events to be compared.
+    """
 
     fst: Timestamp
     snd: Timestamp
