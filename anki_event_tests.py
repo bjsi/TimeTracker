@@ -1,11 +1,11 @@
 from rx.testing import (TestScheduler, ReactiveTest)
 import unittest
 from rx import operators as ops
-from rx_utils import pairwise_buffer, merge_streams
+from rx_utils import pairwise_buffer, merge_streams, emit_when
 from rx_debug import spy
 from rx.core.observable import Observable
-from anki_event import AnkiEvent, EventOrigin
-from typing import List
+from anki_event import MouseEvent, KeyboardEvent, QuestionShownEvent, AnkiEventPair
+from typing import List, Sequence
 
 on_next = ReactiveTest.on_next
 on_completed = ReactiveTest.on_completed
@@ -17,54 +17,138 @@ created = ReactiveTest.created
 
 
 class TestAnkiEvents(unittest.TestCase):
-    # def test_basic(self):
-    #     scheduler: TestScheduler = TestScheduler()
-    #     fst = AnkiEvent(1, EventOrigin.KEYBOARD_PRESSED)
-    #     snd = AnkiEvent(1, EventOrigin.KEYBOARD_PRESSED)
-    #     xs: Observable[AnkiEvent] = scheduler.create_hot_observable(
-    #         on_next(201, fst),
-    #         on_next(202, snd),
-    #         on_completed(3),
-    #     )
+    """
+    Tests merging multiple streams of events and applying operators accross
+    the merged stream.
+    """
+    @staticmethod
+    def typename(obj):
+        return type(obj).__name__
 
-    #     res = scheduler.start(lambda: xs)
-    #     assert res.messages == [on_next(201, str(fst)), on_next(202, str(snd))]
+    @staticmethod
+    def head(seq: Sequence):
+        return seq[0]
 
-    def test_merged_pairwise_window(self):
-        scheduler: TestScheduler = TestScheduler()
-        # Mouse moved observable
-        m_fst = AnkiEvent(1, EventOrigin.MOUSE_MOVED)
-        m_snd = AnkiEvent(2, EventOrigin.MOUSE_MOVED)
-        m_thd = AnkiEvent(1, EventOrigin.MOUSE_MOVED)
-        ms: Observable[AnkiEvent] = scheduler.create_hot_observable(
-            on_next(201, m_fst),
-            on_next(203, m_snd),
-            on_next(205, m_thd),
-            on_completed(3),
-        )
+    def setUp(self):
+        self.scheduler: TestScheduler = TestScheduler()
 
-        # Keyboard pressed observable
-        k_fst = AnkiEvent(1, EventOrigin.KEYBOARD_PRESSED)
-        k_snd = AnkiEvent(2, EventOrigin.KEYBOARD_PRESSED)
-        k_thd = AnkiEvent(1, EventOrigin.KEYBOARD_PRESSED)
-        ks: Observable[AnkiEvent] = scheduler.create_hot_observable(
-            on_next(202, k_fst),
-            on_next(204, k_snd),
-            on_next(206, k_thd),
-            on_completed(3),
-        )
+    def test_basic_merge(self):
+        # Mouse events
+        ms = self.scheduler.create_hot_observable(on_next(201, MouseEvent(1)),
+                                                  on_next(203, MouseEvent(1)))
 
-        def filter_condition(pair: List[AnkiEvent]):
-            fst = pair[0]
-            snd = pair[1]
-            return (fst.card_id != snd.card_id)
+        # Keyboard events
+        ks = self.scheduler.create_hot_observable(
+            on_next(202, KeyboardEvent(1)), on_next(204, KeyboardEvent(1)))
 
         def create():
-            m = merge_streams(ms, ks)
-            s = m.pipe(pairwise_buffer, ops.map(lambda x: x[0]))
-            return s.pipe(
-                ops.window(
-                    m.pipe(pairwise_buffer, ops.filter(filter_condition))))
+            return merge_streams(ms, ks).pipe(ops.map(self.typename))
 
-        res = scheduler.start(create)
-        print(res.messages)
+        res = self.scheduler.start(create)
+        assert res.messages == [
+            on_next(201, "MouseEvent"),
+            on_next(202, "KeyboardEvent"),
+            on_next(203, "MouseEvent"),
+            on_next(204, "KeyboardEvent"),
+        ]
+
+    def test_merged_pairwise(self):
+        # Mouse events
+        ms = self.scheduler.create_hot_observable(on_next(201, MouseEvent(1)),
+                                                  on_next(203, MouseEvent(1)))
+
+        # Keyboard events
+        ks = self.scheduler.create_hot_observable(
+            on_next(202, KeyboardEvent(1)), on_next(204, KeyboardEvent(1)))
+
+        def create():
+            return merge_streams(ms, ks).pipe(ops.map(self.typename),
+                                              pairwise_buffer, ops.map(str))
+
+        res = self.scheduler.start(create)
+        assert res.messages == [
+            on_next(202, "['MouseEvent', 'KeyboardEvent']"),
+            on_next(203, "['KeyboardEvent', 'MouseEvent']"),
+            on_next(204, "['MouseEvent', 'KeyboardEvent']"),
+        ]
+
+    def test_merged_pairwise_head(self):
+        # Mouse events
+        ms = self.scheduler.create_hot_observable(on_next(201, MouseEvent(1)),
+                                                  on_next(203, MouseEvent(1)))
+
+        # Keyboard events
+        ks = self.scheduler.create_hot_observable(
+            on_next(202, KeyboardEvent(1)), on_next(204, KeyboardEvent(1)))
+
+        def create():
+            return merge_streams(ms, ks).pipe(ops.map(self.typename),
+                                              pairwise_buffer,
+                                              ops.map(lambda x: x[0]),
+                                              ops.map(str))
+
+        res = self.scheduler.start(create)
+        assert res.messages == [
+            on_next(202, 'MouseEvent'),
+            on_next(203, 'KeyboardEvent'),
+            on_next(204, 'MouseEvent'),
+        ]
+
+    def test_merged_pairwise_filtered(self):
+        # Mouse events
+        ms = self.scheduler.create_hot_observable(
+            on_next(201, MouseEvent(1)),
+            on_next(203, MouseEvent(2)),
+            on_next(206, MouseEvent(1)),
+        )
+
+        # Keyboard events
+        ks = self.scheduler.create_hot_observable(
+            on_next(202, KeyboardEvent(1)), on_next(204, KeyboardEvent(2)),
+            on_next(207, KeyboardEvent(2)))
+
+        def create():
+            return merge_streams(ms,
+                                 ks).pipe(ops.map(lambda x: x.card_id),
+                                          pairwise_buffer,
+                                          ops.filter(lambda x: x[0] != x[1]),
+                                          ops.map(str))
+
+        res = self.scheduler.start(create)
+        assert res.messages == [
+            on_next(203, str([1, 2])),
+            on_next(206, str([2, 1])),
+            on_next(207, str([1, 2])),
+        ]
+
+    def test_complex_window(self):
+        # Mouse events
+        ms = self.scheduler.create_hot_observable(on_next(201, MouseEvent(1)),
+                                                  on_next(203, MouseEvent(2)),
+                                                  on_next(205, MouseEvent(3)))
+
+        # Keyboard events
+        ks = self.scheduler.create_hot_observable(
+            on_next(202, KeyboardEvent(1)), on_next(204, KeyboardEvent(2)),
+            on_next(206, KeyboardEvent(3)), on_next(208, KeyboardEvent(4)))
+
+        def create():
+            # Each event in each stream is timestamped
+            kst = ks.pipe(ops.timestamp())
+            mst = ms.pipe(ops.timestamp())
+            # Streams merged
+            m = merge_streams(mst, kst)
+            ph = m.pipe(pairwise_buffer, ops.map(self.head))
+            w = ph.pipe(
+                ops.window(
+                    m.pipe(
+                        pairwise_buffer, ops.map(AnkiEventPair),
+                        emit_when(lambda x: x.different_cards() or x.
+                                  afk_timeout()))))
+            return w.pipe(ops.flat_map(lambda x: x.pipe(ops.to_list())))
+
+        res = self.scheduler.start(create)
+
+
+if __name__ == "__main__":
+    unittest.main()
