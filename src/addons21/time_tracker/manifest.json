@@ -1,0 +1,5 @@
+{
+    "name": "Track your time in Anki",
+    "conflicts":[],
+    "package": "time_tracker"
+}
