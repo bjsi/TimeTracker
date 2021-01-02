@@ -1,3 +1,3 @@
-from .event_stream import Events
+from .event_stream import ReviewerEventStream
 
-e = Events()
+e = ReviewerEventStream()
