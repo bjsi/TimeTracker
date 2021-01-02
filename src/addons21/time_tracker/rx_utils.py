@@ -36,3 +36,7 @@ def timestamp(obs: Observable):
 # shifts the event stream once to the right
 def shift_right(obs: Observable):
     return obs.pipe(pairwise_buffer, ops.map(lambda x: x[0]))
+
+
+def monitor_activity(obs: Observable):
+    pass

@@ -31,10 +31,6 @@ class ReviewerEventStream:
     # JS Events
     js_event_stream: JSEventStream
 
-    # Sheduler
-    optimal_thread_count = multiprocessing.cpu_count()
-    pool_scheduler = ThreadPoolScheduler(optimal_thread_count)
-
     def __init__(self):
         self.js_event_stream = JSEventStream(aqt.reviewer.Reviewer,
                                              lambda: mw.reviewer.card.id)

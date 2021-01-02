@@ -39,9 +39,9 @@ class JSEventStream:
 
     def create_main_stream(self):
         self.main_subj = merge_streams(timestamp(self.mouse_moved),
-                                   timestamp(self.mouse_scroll),
-                                   timestamp(self.mouse_click),
-                                   timestamp(self.keyboard_pressed))
+                                       timestamp(self.mouse_scroll),
+                                       timestamp(self.mouse_click),
+                                       timestamp(self.keyboard_pressed))
 
     def subscribe_to_gui_hooks(self):
         gui_hooks.webview_will_set_content.append(self.on_setting_content)
@@ -51,6 +51,7 @@ class JSEventStream:
                            context: Optional[Any]) -> None:
         if not self.is_type(context):
             return
+        # TODO:
         # addon_package = mw.addonManager.addonFromModule(__name__)
         # js_file = f"/_addons/{addon_package}/web/send_events_to_python.js"
         # web_content.js.append(js_file)
@@ -98,14 +99,14 @@ document.addEventListener('scroll', throttle(function() {
                           context: Any) -> Tuple[bool, Any]:
         if self.is_type(context):
             if message == "mousemove":
-                self.mouse_moved.on_next(MouseEvent(self.get_on_next_data()))
+                self.mouse_moved.on_next(self.get_on_next_data())
             elif message == "keydown":
-                self.keyboard_pressed.on_next(KeyboardEvent(self.get_on_next_data())
+                self.keyboard_pressed.on_next()
             elif message == "scroll":
-                self.mouse_scroll.on_next(self.get_on_next_data())
+                self.mouse_scroll.on_next()
             elif message == "click":
-                self.mouse_click.on_next(MouseEvent(self.get_on_next_data()))
+                self.mouse_click.on_next()
         return handled
 
     def is_type(self, context: Any) -> bool:
-        return isinstance(context, self.type)
+        return isinstance(context, self.typ)
