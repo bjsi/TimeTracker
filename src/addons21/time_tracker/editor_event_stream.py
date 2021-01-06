@@ -1,32 +1,37 @@
-import multiprocessing
-from typing import Any, Optional, Tuple, List
-import os
+from typing import Any, List, Optional, Tuple
+
+from anki.cards import Card
 import aqt
 from aqt import mw
-from anki.cards import Card
 from aqt import gui_hooks
 from aqt.reviewer import Reviewer
-from .rx import operators as ops
-from .rx.core.observable import observable
-from .rx.scheduler import ThreadPoolScheduler
-from .rx.subject import Subject
-from .anki_event import (MouseEvent, KeyboardEvent, QuestionShownEvent,
-                         AnkiEvent, AnsweredEvent, AnswerShownEvent,
-                         ReviewEndEvent)
-from .rx_utils import (merge_streams, timestamp, emit_when, pairwise_buffer,
-                       shift_right)
 from .anki_event import AnkiEventPair
-from .rx_debug import spy
+
+from .rx_utils import merge_streams
+from .event_stream_base import EventStreamBase
+from .js_event_stream import JSEventStream
+from .editor_event import EditorEvent, EditorEventOrigin
 
 
-class EditorEventStream:
+def on_next_data(origin: str) -> EditorEvent:
+    return EditorEvent(origin)
+
+
+class EditorEventStream(EventStreamBase):
 
     ## Individual event streams
     # GUI Hooks
 
     # JS
-
+    js_event_stream: JSEventStream
 
     def __init__(self):
-        self.subscribe_to_gui_hooks()
+        self.js_event_stream = JSEventStream(Editor, on_next_data)
+        self.__subscribe_to_gui_hooks()
+        self.__create_main_stream()
 
+    def __subscribe_to_gui_hooks(self):
+        pass
+
+    def __create_main_stream(self):
+        self.main_subj = merge_streams()

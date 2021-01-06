@@ -1,39 +1,42 @@
-from typing import Any, Optional, Tuple, List, Callable
-import os
+from typing import Any, Optional, Tuple, Callable, List
 import aqt
-from aqt import mw
-from anki.cards import Card
 from aqt import gui_hooks
-from aqt.reviewer import Reviewer
-from .rx import operators as ops
-from .rx.core.observable import observable
-from .rx.scheduler import ThreadPoolScheduler
 from .rx.subject import Subject
-from .anki_event import (MouseEvent, KeyboardEvent, QuestionShownEvent,
-                         AnkiEvent, AnsweredEvent, AnswerShownEvent,
-                         ReviewEndEvent)
-from .rx_utils import (merge_streams, timestamp, emit_when, pairwise_buffer,
-                       shift_right)
-from .anki_event import AnkiEventPair
-from .rx_debug import spy
+from .rx_utils import merge_streams, timestamp
+from .event_stream_base import EventStreamBase
+from enum import Enum
+from .event_base import EventBase
 
 
-class JSEventStream:
+class JSEventOrigin(Enum):
 
-    # Main event stream
-    main_subj = Subject()
-    typ: Any
-    get_on_next_data: Callable[[], Any]
+    mouse_move = 1,
+    mouse_scroll = 2,
+    mouse_click = 3,
+    keyboard_pressed = 4,
 
-    # Individual event streams
+
+mouse_move = JSEventOrigin.mouse_move.name
+keyboard_pressed = JSEventOrigin.keyboard_pressed.name
+mouse_scroll = JSEventOrigin.mouse_scroll.name
+mouse_click = JSEventOrigin.mouse_click.name
+
+
+class JSEventStream(EventStreamBase):
+
+    target_context: Any
+    # Using a List to prevent binding
+    next_data_func: List[Callable[[str], EventBase]]
+
     mouse_moved: Subject = Subject()
     mouse_scroll: Subject = Subject()
     mouse_click: Subject = Subject()
     keyboard_pressed: Subject = Subject()
 
-    def __init__(self, typ: Any, get_on_next_data: Callable[[...], Any]):
-        self.typ = typ
-        self.get_on_next_data = get_on_next_data
+    def __init__(self, context: Any, next_data_func: Callable[[str],
+                                                              EventBase]):
+        self.target_context = context
+        self.next_data_func[0] = next_data_func
         self.subscribe_to_gui_hooks()
         self.create_main_stream()
 
@@ -49,64 +52,63 @@ class JSEventStream:
 
     def on_setting_content(self, web_content: aqt.webview.WebContent,
                            context: Optional[Any]) -> None:
-        if not self.is_type(context):
+        if not isinstance(context, self.target_context):
             return
-        # TODO:
-        # addon_package = mw.addonManager.addonFromModule(__name__)
-        # js_file = f"/_addons/{addon_package}/web/send_events_to_python.js"
-        # web_content.js.append(js_file)
-        web_content.head += ("""<script>
-const throttle = (func, limit) => {
+
+        web_content.head += (f"""<script>
+const throttle = (func, limit) => {{
   let lastFunc
   let lastRan
-  return function() {
+  return function() {{
     const context = this
     const args = arguments
-    if (!lastRan) {
+    if (!lastRan) {{
       func.apply(context, args)
       lastRan = Date.now()
-    } else {
+    }} else {{
       clearTimeout(lastFunc)
-      lastFunc = setTimeout(function() {
-        if ((Date.now() - lastRan) >= limit) {
+      lastFunc = setTimeout(function() {{
+        if ((Date.now() - lastRan) >= limit) {{
           func.apply(context, args)
           lastRan = Date.now()
-        }
-      }, limit - (Date.now() - lastRan))
-    }
-  }
-}
+        }}
+      }}, limit - (Date.now() - lastRan))
+    }}
+  }}
+}}
 
-document.addEventListener('click', throttle(function() {
-  return pycmd('click')
-}, 500));
+document.addEventListener('click', throttle(function() {{
+  return pycmd('{mouse_click}')
+}}, 500));
 
-document.addEventListener('keydown', throttle(function() {
-  return pycmd('keydown')
-}, 500));
+document.addEventListener('keydown', throttle(function() {{
+  return pycmd('{keyboard_pressed}')
+}}, 500));
 
-document.addEventListener('mousemove', throttle(function() {
-  return pycmd('mousemove')
-}, 500));
+document.addEventListener('mousemove', throttle(function() {{
+  return pycmd('{mouse_move}')
+}}, 500));
 
-document.addEventListener('scroll', throttle(function() {
-    return pycmd('scroll')
-}), 500);
+document.addEventListener('scroll', throttle(function() {{
+    return pycmd('{mouse_scroll}')
+}}), 500);
 </script>
                 """)
 
+    def get_next_data(self, origin: str):
+        return self.next_data_func[0](origin)
+
     def handle_js_message(self, handled: Tuple[bool, Any], message: str,
                           context: Any) -> Tuple[bool, Any]:
-        if self.is_type(context):
-            if message == "mousemove":
-                self.mouse_moved.on_next(self.get_on_next_data())
-            elif message == "keydown":
-                self.keyboard_pressed.on_next()
-            elif message == "scroll":
-                self.mouse_scroll.on_next()
-            elif message == "click":
-                self.mouse_click.on_next()
-        return handled
+        if not isinstance(context, self.target_context):
+            return handled
 
-    def is_type(self, context: Any) -> bool:
-        return isinstance(context, self.typ)
+        if message == mouse_move:
+            self.mouse_moved.on_next(self.get_next_data(mouse_move))
+        elif message == keyboard_pressed:
+            self.keyboard_pressed.on_next(self.get_next_data(keyboard_pressed))
+        elif message == mouse_scroll:
+            self.mouse_scroll.on_next(self.get_next_data(mouse_scroll))
+        elif message == mouse_click:
+            self.mouse_click.on_next(self.get_next_data(mouse_click))
+        return handled

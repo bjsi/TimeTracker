@@ -10,16 +10,17 @@ from .rx.core.observable import observable
 from .rx.scheduler import ThreadPoolScheduler
 from .rx.subject import Subject
 from .anki_event import (MouseEvent, KeyboardEvent, QuestionShownEvent,
-                         AnkiEvent, AnsweredEvent, AnswerShownEvent,
+                         ReviewerEvent, AnsweredEvent, AnswerShownEvent,
                          ReviewEndEvent)
-from .rx_utils import (merge_streams, timestamp, emit_when, pairwise_buffer,
-                       shift_right)
+from .rx_utils import (merge_streams, timestamp, monitor_activity)
 from .anki_event import AnkiEventPair
 from .rx_debug import spy
 from .js_event_stream import JSEventStream
 
 
 class ReviewerEventStream:
+
+    main_subj: Subject = Subject()
 
     ## Individual event streams
     # GUI Hooks
@@ -77,38 +78,8 @@ class ReviewerEventStream:
         Create the merged event stream and subscribe to it.
         """
 
-        # Timetamp each event from each stream and merge into
-        # a master stream
-        # -1-3-5-7
-        # 0-2-4-6-
-        # merge()
-        # 1234567
-        merged = merge_streams(self.js_event_stream.main_subj,
-                               timestamp(self.question_shown),
-                               timestamp(self.answer_shown),
-                               timestamp(self.answered),
-                               timestamp(self.review_ended))
-
-        # Simply shift each event right by one time step
-        # 1-2-3-4-5
-        # shift_right()
-        # -1-2-3-4-5
-        shifted = merged.pipe(shift_right)
-
-        # Each new event is compared with the event before it.
-        # If the card id is different, or the time between events
-        # was greater than the afk timeout value, this closes the
-        # previous stream of events, condenses them into an activity
-        # snapshot, and sends them to the time tracking server.
-
-        windowed = shifted.pipe(
-            ops.window(
-                merged.pipe(
-                    pairwise_buffer, ops.map(AnkiEventPair),
-                    emit_when(lambda x: x.different_cards() or x.afk_timeout())
-                ))).pipe(ops.flat_map(lambda x: x.pipe(ops.to_list())),
-                         ops.filter(lambda x: len(x) > 1))
-
-        # condense events into an activity snapshot and
-        # send to the server on a thread pool thread
-        # windowed.pipe(ops.observe_on(self.pool_scheduler)).subscribe()
+        self.main_subj = merge_streams(self.js_event_stream.main_subj,
+                                       timestamp(self.question_shown),
+                                       timestamp(self.answer_shown),
+                                       timestamp(self.answered),
+                                       timestamp(self.review_ended))

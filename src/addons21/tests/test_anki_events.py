@@ -1,10 +1,13 @@
-from rx.testing import (TestScheduler, ReactiveTest)
 import unittest
-from rx import operators as ops
-from time_tracker.rx_utils import pairwise_buffer, merge_streams, emit_when
-from rx.core.observable import Observable
-from time_tracker.anki_event import MouseEvent, KeyboardEvent, QuestionShownEvent, AnkiEventPair
 from typing import List, Sequence
+
+from rx import operators as ops
+from rx.core.observable import Observable
+from rx.testing import ReactiveTest, TestScheduler
+
+from time_tracker.anki_event import (AnkiEventPair, KeyboardEvent, MouseEvent,
+                                     QuestionShownEvent)
+from time_tracker.rx_utils import emit_when, merge_streams, pairwise_buffer
 
 on_next = ReactiveTest.on_next
 on_completed = ReactiveTest.on_completed

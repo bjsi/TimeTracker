@@ -1,5 +1,5 @@
 from rx.testing import (TestScheduler, ReactiveTest)
-from time_tracker.anki_event import AnkiEvent
+from time_tracker.anki_event import ReviewerEvent
 import unittest
 from rx import operators as ops
 from time_tracker.rx_utils import pairwise_buffer, merge_streams
