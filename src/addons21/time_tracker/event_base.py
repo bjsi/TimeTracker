@@ -24,8 +24,8 @@ class EventBase(ABC):
         assert len(pair) == 2
         assert pair[0].timestamp <= pair[1].timestamp
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def condense(cls, events: List[Timestamp]):
         """
         Takes a list of events and returns a single activity snapshot for
@@ -36,13 +36,13 @@ class EventBase(ABC):
     @classmethod
     def should_window(cls, pair: List[Timestamp]) -> bool:
         cls.__validate_pair(pair)
-        fst = pair[1]
-        snd = pair[2]
+        fst = pair[0]
+        snd = pair[1]
         return (cls.__types_are_different(fst, snd)
                 or cls.custom_window_condition(fst, snd))
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def custom_window_condition(cls, fst: Timestamp, snd: Timestamp) -> bool:
         """
         Override this to implement custom event stream splitting logic.

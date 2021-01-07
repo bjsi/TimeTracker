@@ -12,9 +12,7 @@ from .addon_event_tracker import AddonEventStream
 
 class MainObserver:
 
-    # Sheduler
-    optimal_thread_count = multiprocessing.cpu_count()
-    pool_scheduler = ThreadPoolScheduler(optimal_thread_count)
+    pool_scheduler = ThreadPoolScheduler(multiprocessing.cpu_count())
 
     def __init__(self, *args):
         self.subscribe_to_merged_stream(*args)

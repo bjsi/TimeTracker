@@ -1,7 +1,10 @@
-from .rx.core.observable import Observable
-import rx
-from .rx import operators as ops
 from typing import List
+
+import rx
+
+from .rx import operators as ops
+from .rx.core.operators.timestamp import Timestamp
+from .rx.core.observable import Observable
 
 
 # 1122334|
@@ -39,8 +42,9 @@ def shift_right(obs):
     return obs.pipe(pairwise_buffer, ops.map(lambda x: x[0]))
 
 
-def window_border_condition_met(pair: List):
-    return type(pair[0]).should_window(pair)
+def window_border_condition_met(pair: List[Timestamp]):
+    assert len(pair) == 2
+    return type(pair[0].value).should_window(pair)
 
 
 def monitor_activity(merged):
@@ -52,7 +56,7 @@ def monitor_activity(merged):
 
     # pairwise iteration over the original stream, each time
     # there is a pair for which the window_border_condition_met
-    # returns true, the window emits an item, splitting the shifted stream
+    # returns true, the window emits an item, splitting the shifted stream, closing the last window and opening a new one
     windowed = shifted.pipe(
         ops.window(
             merged.pipe(pairwise_buffer,
