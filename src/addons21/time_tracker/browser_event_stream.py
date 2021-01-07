@@ -8,6 +8,10 @@ from .rx.subject import Subject
 from .rx_utils import merge_streams, timestamp
 
 
+def get_on_next_data(origin: str) -> BrowserEvent:
+    return BrowserEvent(origin)
+
+
 class BrowserEventStream(EventStreamBase):
 
     # GUI Hooks
@@ -19,7 +23,8 @@ class BrowserEventStream(EventStreamBase):
     js_event_stream: JSEventStream
 
     def __init__(self):
-        self.js_event_stream = JSEventStream(aqt.browser.Browser, None)
+        self.js_event_stream = JSEventStream(aqt.browser.Browser,
+                                             get_on_next_data)
         self.__subscribe_to_gui_hooks()
         self.__create_main_stream()
 
@@ -33,8 +38,9 @@ class BrowserEventStream(EventStreamBase):
         gui_hooks.browser_did_change_row.append(self.on_row_changed)
 
     def on_search(self, context: aqt.browser.SearchContext):
-        self.searched_subj.on_next(BrowserEvent(BrowserEventOrigin.search))
+        self.searched_subj.on_next(BrowserEvent(
+            BrowserEventOrigin.search.name))
 
     def on_row_changed(self, browser: aqt.browser.Browser):
         self.row_changed_subj.on_next(
-            BrowserEvent(BrowserEventOrigin.row_changed))
+            BrowserEvent(BrowserEventOrigin.row_changed.name))

@@ -1,5 +1,4 @@
 from typing import List
-from abc import ABC
 from .rx.core.operators.timestamp import Timestamp
 from .event_base import EventBase
 from anki.cards import Card
@@ -8,8 +7,10 @@ from enum import Enum
 
 class ReviewerEventOrigin(Enum):
 
-    mouse = 1,
-    keyboard = 2,
+    question_shown = 1,
+    answer_shown = 2,
+    answered = 3,
+    review_ended = 4
 
 
 class ReviewerEvent(EventBase):
@@ -19,9 +20,9 @@ class ReviewerEvent(EventBase):
     answer: str
     deck_path: List[str]
 
-    def __init__(self, origin: ReviewerEventOrigin, card: Card):
-        super().__init__(origin.name)
-        self.card_id = Card.id
+    def __init__(self, origin: str, card: Card):
+        super().__init__(origin)
+        self.card_id = card.id
         self.question = card.question()
         self.answer = card.answer()
         # TODO
@@ -29,6 +30,7 @@ class ReviewerEvent(EventBase):
 
     @classmethod
     def custom_window_condition(cls, fst: Timestamp, snd: Timestamp) -> bool:
+        # TODO: Split on answered? Include ease?
         return fst.value.card_id != snd.value.card_id
 
     @classmethod

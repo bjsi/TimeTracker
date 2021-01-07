@@ -1,28 +1,24 @@
-import multiprocessing
-from typing import Any, Optional
+from anki.cards import Card
 import aqt
 from aqt import mw
-from anki.cards import Card
 from aqt import gui_hooks
 from aqt.reviewer import Reviewer
-from .rx import operators as ops
-from .rx.core.observable import observable
-from .rx.scheduler import ThreadPoolScheduler
-from .rx.subject import Subject
-from .anki_event import (MouseEvent, KeyboardEvent, QuestionShownEvent,
-                         ReviewerEvent, AnsweredEvent, AnswerShownEvent,
-                         ReviewEndEvent)
-from .rx_utils import (merge_streams, timestamp, monitor_activity)
-from .anki_event import AnkiEventPair
-from .rx_debug import spy
+from typing import List, Any
+
 from .js_event_stream import JSEventStream
+from .rx.subject import Subject
+from .rx_utils import merge_streams, timestamp
+from .event_stream_base import EventStreamBase
+from .reviewer_event import ReviewerEvent, ReviewerEventOrigin
+from .event_base import EventBase
 
 
-class ReviewerEventStream:
+def get_on_next_data(origin: str) -> EventBase:
+    return ReviewerEvent(origin, mw.reviewer.card)
 
-    main_subj: Subject = Subject()
 
-    ## Individual event streams
+class ReviewerEventStream(EventStreamBase):
+
     # GUI Hooks
     question_shown: Subject = Subject()
     answer_shown: Subject = Subject()
@@ -34,19 +30,16 @@ class ReviewerEventStream:
 
     def __init__(self):
         self.js_event_stream = JSEventStream(aqt.reviewer.Reviewer,
-                                             lambda: mw.reviewer.card.id)
+                                             get_on_next_data)
         self.__subscribe_to_gui_hooks()
-        self.__subscribe_to_event_stream()
+        self.__create_event_stream()
 
-    def __subscribe_to_gui_hooks(self):
+    def __subscribe_to_gui_hooks(self) -> None:
         # Main GUI Hooks
         gui_hooks.reviewer_did_show_question.append(self.on_question_shown)
         gui_hooks.reviewer_did_show_answer.append(self.on_answer_shown)
         gui_hooks.reviewer_did_answer_card.append(self.on_answered)
         gui_hooks.reviewer_will_end.append(self.on_review_end)
-        # JS Hooks
-        gui_hooks.webview_will_set_content.append(self.on_setting_content)
-        gui_hooks.webview_did_receive_js_message.append(self.handle_js_message)
 
     @staticmethod
     def is_reviewer(context: Any) -> bool:
@@ -56,27 +49,28 @@ class ReviewerEventStream:
     # Event Handlers #
     ##################
 
-    def on_answered(self, reviewer: Reviewer, card: Card, ease: int):
-        self.answered.on_next(AnsweredEvent(card.id))
+    def on_answered(self, reviewer: Reviewer, card: Card, ease: int) -> None:
+        origin = ReviewerEventOrigin.answered.name
+        self.answered.on_next(ReviewerEvent(origin, card))
 
     def on_review_end(self) -> None:
-        card_id = mw.reviewer.card.id
-        self.review_ended.on_next(ReviewEndEvent(card_id))
+        card = mw.reviewer.card
+        origin = ReviewerEventOrigin.review_ended.name
+        self.review_ended.on_next(ReviewerEvent(origin, card))
 
     def on_question_shown(self, card: Card) -> None:
-        self.question_shown.on_next(QuestionShownEvent(card.id))
+        origin = ReviewerEventOrigin.question_shown.name
+        self.question_shown.on_next(ReviewerEvent(origin, card))
 
     def on_answer_shown(self, card: Card) -> None:
-        self.answer_shown.on_next(AnswerShownEvent(card.id))
+        origin = ReviewerEventOrigin.answer_shown.name
+        self.answer_shown.on_next(ReviewerEvent(origin, card))
 
     ######################
     # Create Main Stream #
     ######################
 
-    def __subscribe_to_event_stream(self):
-        """
-        Create the merged event stream and subscribe to it.
-        """
+    def __create_event_stream(self):
 
         self.main_subj = merge_streams(self.js_event_stream.main_subj,
                                        timestamp(self.question_shown),

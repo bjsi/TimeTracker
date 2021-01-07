@@ -10,9 +10,10 @@ class BrowserEventOrigin(Enum):
     search = 2,
 
 
+# TODO: Split on search and include search term?
 class BrowserEvent(EventBase):
-    def __init__(self, origin: BrowserEventOrigin):
-        super().__init__(origin.name)
+    def __init__(self, origin: str):
+        super().__init__(origin)
 
     @classmethod
     def custom_window_condition(cls, fst: Timestamp, snd: Timestamp):

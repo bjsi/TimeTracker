@@ -34,6 +34,7 @@ class CardAdderEvent(EventBase):
             # TODO: include note data
         }
 
+    @classmethod
     def custom_window_condition(cls, fst: Timestamp, snd: Timestamp):
         return fst.value.added_note
 

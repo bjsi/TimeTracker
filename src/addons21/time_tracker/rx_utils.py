@@ -40,10 +40,7 @@ def shift_right(obs):
 
 
 def window_border_condition_met(pair: List):
-    assert len(pair) == 2
-    fst = pair[0]
-    snd = pair[1]
-    return fst.should_window(snd)
+    return type(pair[0]).should_window(pair)
 
 
 def monitor_activity(merged):

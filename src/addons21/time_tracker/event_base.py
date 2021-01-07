@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod, abstractclassmethod
+from abc import ABC, abstractmethod
 from .rx.core.operators.timestamp import Timestamp
 from typing import List
 
@@ -24,7 +24,8 @@ class EventBase(ABC):
         assert len(pair) == 2
         assert pair[0].timestamp <= pair[1].timestamp
 
-    @abstractclassmethod
+    @abstractmethod
+    @classmethod
     def condense(cls, events: List[Timestamp]):
         """
         Takes a list of events and returns a single activity snapshot for
@@ -40,7 +41,8 @@ class EventBase(ABC):
         return (cls.__types_are_different(fst, snd)
                 or cls.custom_window_condition(fst, snd))
 
-    @abstractclassmethod
+    @abstractmethod
+    @classmethod
     def custom_window_condition(cls, fst: Timestamp, snd: Timestamp) -> bool:
         """
         Override this to implement custom event stream splitting logic.

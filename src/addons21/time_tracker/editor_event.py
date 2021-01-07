@@ -6,7 +6,10 @@ from .event_base import EventBase
 
 
 class EditorEventOrigin(Enum):
-    pass
+
+    editor_opened = 1,
+    field_focused = 2
+    field_unfocused = 3
 
 
 class EditorEvent(EventBase):
@@ -15,8 +18,10 @@ class EditorEvent(EventBase):
 
     @classmethod
     def condense(cls, events: List[Timestamp]):
-        pass
+        fst = events[0]
+        lst = events[-1]
+        return {"duration": lst.timestamp - fst.timestamp}
 
     @classmethod
     def custom_window_condition(cls, fst: Timestamp, snd: Timestamp):
-        pass
+        return False
