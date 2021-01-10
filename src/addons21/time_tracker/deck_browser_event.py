@@ -9,6 +9,7 @@ from .condensed_event import CondensedEvent
 class DeckBrowserEventOrigin(Enum):
 
     opened_browser = 1,
+    closed = 2
 
 
 class DeckBrowserEvent(EventBase):
@@ -19,7 +20,8 @@ class DeckBrowserEvent(EventBase):
     def condense(cls, events: List[Timestamp]):
         fst = events[0]
         lst = events[-1]
-        return CondensedEvent("deck_browser", fst.timestamp, lst.timestamp, {}).to_dict()
+        return CondensedEvent("deck_browser", fst.timestamp, lst.timestamp,
+                              {}).to_dict()
 
     @classmethod
     def custom_window_condition(cls, fst: Timestamp, snd: Timestamp) -> bool:
