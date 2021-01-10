@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Dict, List
+import re
 
 from anki.cards import Card
 
@@ -49,6 +50,10 @@ class ReviewerEvent(EventBase):
         # TODO: Split on answered? Include ease?
         return fst.value.card_id != snd.value.card_id
 
+    @staticmethod
+    def strip_html(text: str):
+        return re.sub('<[^<]+?>', '', text)
+
     @classmethod
     def condense(cls, events: List[Timestamp]) -> Dict:
         fst = events[0]
@@ -56,9 +61,8 @@ class ReviewerEvent(EventBase):
         data = {
             "card_id": fst.value.card_id,
             # TODO: Can this change? If so, diff question and answer
-            # strip html, newlines here
-            "question": fst.value.question,
-            "answer": fst.value.answer,
+            "question": cls.strip_html(fst.value.question),
+            "answer": cls.strip_html(fst.value.answer),
             "deck_path": []
         }
         return CondensedEvent("reviewer", fst.timestamp, lst.timestamp,
