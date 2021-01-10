@@ -7,7 +7,7 @@ from .event_stream_base import EventStreamBase
 from .js_event_stream import JSEventStream
 from .editor_event import EditorEvent, EditorEventOrigin
 from .rx.subject import Subject
-from .qt_window_hooks import money_patch_close_event
+from .qt_window_hooks import monkey_patch_close_event
 
 
 def on_next_data(origin: str) -> EditorEvent:
@@ -34,7 +34,7 @@ class EditorEventStream(EventStreamBase):
         gui_hooks.editor_did_init.append(self.editor_opened)
         gui_hooks.editor_did_focus_field.append(self.field_focused)
         gui_hooks.editor_did_unfocus_field.append(self.field_unfocused)
-        money_patch_close_event(aqt.editor.Editor, self.on_closed)
+        monkey_patch_close_event(aqt.editor.Editor, self.on_closed)
 
     def __create_main_stream(self):
         self.main_subj = merge_streams(

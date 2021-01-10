@@ -13,6 +13,7 @@ from .rx.subject import Subject
 from .rx_utils import merge_streams, timestamp
 from .event_stream_base import EventStreamBase
 from .js_event_stream import JSEventStream
+from .qt_window_hooks import monkey_patch_close_event
 
 
 def get_on_next_data(origin: str):
@@ -22,6 +23,7 @@ def get_on_next_data(origin: str):
 class DeckBrowserEventStream(EventStreamBase):
 
     browser_rendered: Subject = Subject()
+    closed: Subject = Subject()
 
     js_event_stream: JSEventStream
 
@@ -32,11 +34,21 @@ class DeckBrowserEventStream(EventStreamBase):
 
     def __create_main_stream(self):
         self.main_subj = merge_streams(self.js_event_stream.main_subj,
+                                       timestamp(self.closed),
                                        timestamp(self.browser_rendered))
 
     def __subscribe_to_hooks(self):
         gui_hooks.deck_browser_did_render.append(self.on_deck_browser_rendered)
+        monkey_patch_close_event(DeckBrowser, self.on_closed)
 
-    def on_deck_browser_rendered(self, something):
+    ##################
+    # Event Handlers #
+    ##################
+
+    def on_closed(self, _):
+        self.closed.on_next(
+            DeckBrowserEvent(DeckBrowserEventOrigin.opened_browser.name))
+
+    def on_deck_browser_rendered(self, _):
         self.browser_rendered.on_next(
             DeckBrowserEvent(DeckBrowserEventOrigin.opened_browser.name))

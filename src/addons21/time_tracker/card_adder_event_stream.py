@@ -7,7 +7,7 @@ from .event_stream_base import EventStreamBase
 from .js_event_stream import JSEventStream
 from .rx.subject import Subject
 from .rx_utils import merge_streams, timestamp
-from .qt_window_hooks import money_patch_close_event
+from .qt_window_hooks import monkey_patch_close_event
 
 
 def get_on_next_data(origin: str):
@@ -39,7 +39,7 @@ class CardAdderEventStream(EventStreamBase):
     def __subscribe_to_hooks(self) -> None:
         gui_hooks.add_cards_did_add_note.append(self.on_note_added)
         gui_hooks.add_cards_did_init.append(self.on_add_cards_init)
-        money_patch_close_event(aqt.addcards.AddCards, self.on_closed)
+        monkey_patch_close_event(aqt.addcards.AddCards, self.on_closed)
 
     ##################
     # Event Handlers #

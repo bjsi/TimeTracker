@@ -6,7 +6,7 @@ from .event_stream_base import EventStreamBase
 from .js_event_stream import JSEventStream
 from .rx.subject import Subject
 from .rx_utils import merge_streams, timestamp
-from .qt_window_hooks import money_patch_close_event
+from .qt_window_hooks import monkey_patch_close_event
 
 
 def get_on_next_data(origin: str) -> BrowserEvent:
@@ -41,7 +41,7 @@ class BrowserEventStream(EventStreamBase):
         gui_hooks.browser_did_search.append(self.on_search)
         gui_hooks.browser_did_change_row.append(self.on_row_changed)
         gui_hooks.browser_will_show.append(self.on_show)
-        money_patch_close_event(aqt.browser.Browser, self.on_closed)
+        monkey_patch_close_event(aqt.browser.Browser, self.on_closed)
 
     #################
     # Even Handlers #
