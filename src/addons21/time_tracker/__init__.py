@@ -7,5 +7,6 @@ from .rx_utils import merge_streams
 from .rx import operators as ops
 
 streams = merge_streams(ReviewerEventStream().main_subj,
+                        BrowserEventStream().main_subj,
                         DeckBrowserEventStream().main_subj).pipe(ops.share())
 observer = MainObserver(streams)

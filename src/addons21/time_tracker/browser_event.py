@@ -9,6 +9,7 @@ from .condensed_event import CondensedEvent
 class BrowserEventOrigin(Enum):
     row_changed = 1,
     search = 2,
+    opened = 3
 
 
 # TODO: Split on search and include search term?
@@ -24,5 +25,5 @@ class BrowserEvent(EventBase):
     def condense(cls, events: List[Timestamp]) -> Dict:
         fst = events[0]
         lst = events[-1]
-        data = {}
-        return CondensedEvent(fst.timestamp, lst.timestamp, data).to_dict()
+        return CondensedEvent("browser", fst.timestamp, lst.timestamp,
+                              {}).to_dict()

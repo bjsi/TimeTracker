@@ -56,11 +56,13 @@ class ReviewerEvent(EventBase):
         data = {
             "card_id": fst.value.card_id,
             # TODO: Can this change? If so, diff question and answer
+            # strip html, newlines here
             "question": fst.value.question,
             "answer": fst.value.answer,
             "deck_path": []
         }
-        return CondensedEvent(fst.timestamp, lst.timestamp, data).to_dict()
+        return CondensedEvent("reviewer", fst.timestamp, lst.timestamp,
+                              data).to_dict()
 
     def __repr__(self):
         return f"<ReviewerEvent: id: {self.card_id}>"

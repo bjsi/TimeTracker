@@ -19,7 +19,7 @@ class DeckBrowserEvent(EventBase):
     def condense(cls, events: List[Timestamp]):
         fst = events[0]
         lst = events[-1]
-        return CondensedEvent(fst.timestamp, lst.timestamp, {}).to_dict()
+        return CondensedEvent("deck_browser", fst.timestamp, lst.timestamp, {}).to_dict()
 
     @classmethod
     def custom_window_condition(cls, fst: Timestamp, snd: Timestamp) -> bool:

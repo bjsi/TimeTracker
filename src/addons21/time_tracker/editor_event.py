@@ -21,7 +21,7 @@ class EditorEvent(EventBase):
     def condense(cls, events: List[Timestamp]):
         fst = events[0]
         lst = events[-1]
-        return CondensedEvent(fst.timestamp, lst.timestamp, {})
+        return CondensedEvent("editor", fst.timestamp, lst.timestamp, {})
 
     @classmethod
     def custom_window_condition(cls, fst: Timestamp, snd: Timestamp):

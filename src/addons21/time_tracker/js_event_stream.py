@@ -92,6 +92,7 @@ document.addEventListener('mousemove', throttle(function() {{
 document.addEventListener('scroll', throttle(function() {{
     return pycmd('{mouse_scroll}')
 }}), 500);
+
 </script>
                 """)
 

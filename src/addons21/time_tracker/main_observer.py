@@ -25,5 +25,4 @@ class MainObserver:
     def subscribe(self):
         (self.merged.pipe(
             monitor_activity,
-            ops.map(lambda x: type(x[0].value).condense(x))).subscribe(
-                lambda x: print(x, file=sys.stderr)))
+            ops.map(lambda x: type(x[0].value).condense(x))).subscribe(print))

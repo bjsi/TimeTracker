@@ -69,7 +69,6 @@ class ReviewerEventStream(EventStreamBase):
     ######################
 
     def __create_event_stream(self):
-
         self.main_subj = merge_streams(self.js_event_stream.main_subj,
                                        timestamp(self.question_shown),
                                        timestamp(self.answer_shown),

@@ -30,7 +30,8 @@ class CardAdderEvent(EventBase):
         fst = events[0]
         lst = events[-1]
         data = {"added_note": lst.value.added_note}
-        return CondensedEvent(fst.timestamp, lst.timestamp, data).to_dict()
+        return CondensedEvent("card_adder", fst.timestamp, lst.timestamp,
+                              data).to_dict()
 
     @classmethod
     def custom_window_condition(cls, fst: Timestamp, snd: Timestamp):

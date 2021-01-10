@@ -15,6 +15,7 @@ def get_on_next_data(origin: str) -> BrowserEvent:
 class BrowserEventStream(EventStreamBase):
 
     # GUI Hooks
+    opened_subj = Subject()
     searched_subj = Subject()
     row_changed_subj = Subject()
     # TODO: Close event
@@ -36,11 +37,15 @@ class BrowserEventStream(EventStreamBase):
     def __subscribe_to_gui_hooks(self):
         gui_hooks.browser_did_search.append(self.on_search)
         gui_hooks.browser_did_change_row.append(self.on_row_changed)
+        gui_hooks.browser_will_show.append(self.on_show)
 
-    def on_search(self, context: aqt.browser.SearchContext):
+    def on_search(self, _: aqt.browser.SearchContext):
         self.searched_subj.on_next(BrowserEvent(
             BrowserEventOrigin.search.name))
 
-    def on_row_changed(self, browser: aqt.browser.Browser):
+    def on_show(self, _: aqt.browser.Browser):
+        self.opened_subj.on_next(BrowserEvent(BrowserEventOrigin.opened.name))
+
+    def on_row_changed(self, _: aqt.browser.Browser):
         self.row_changed_subj.on_next(
             BrowserEvent(BrowserEventOrigin.row_changed.name))
