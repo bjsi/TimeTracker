@@ -10,6 +10,7 @@ class BrowserEventOrigin(Enum):
     row_changed = 1,
     search = 2,
     opened = 3
+    closed = 4,
 
 
 # TODO: Split on search and include search term?

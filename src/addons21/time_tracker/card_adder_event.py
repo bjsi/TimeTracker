@@ -12,6 +12,7 @@ class CardAdderEventOrigin(Enum):
 
     opened_card_adder = 1
     added_note = 2
+    closed = 3
 
 
 class CardAdderEvent(EventBase):

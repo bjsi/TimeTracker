@@ -8,9 +8,10 @@ from .condensed_event import CondensedEvent
 
 class EditorEventOrigin(Enum):
 
-    editor_opened = 1,
+    editor_opened = 1
     field_focused = 2
     field_unfocused = 3
+    closed = 4
 
 
 class EditorEvent(EventBase):
