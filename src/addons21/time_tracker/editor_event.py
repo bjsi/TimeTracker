@@ -3,6 +3,7 @@ from enum import Enum
 
 from .rx.core.operators.timestamp import Timestamp
 from .event_base import EventBase
+from .condensed_event import CondensedEvent
 
 
 class EditorEventOrigin(Enum):
@@ -20,7 +21,7 @@ class EditorEvent(EventBase):
     def condense(cls, events: List[Timestamp]):
         fst = events[0]
         lst = events[-1]
-        return {"duration": lst.timestamp - fst.timestamp}
+        return CondensedEvent(fst.timestamp, lst.timestamp, {})
 
     @classmethod
     def custom_window_condition(cls, fst: Timestamp, snd: Timestamp):

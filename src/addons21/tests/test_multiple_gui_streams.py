@@ -19,6 +19,19 @@ disposed = ReactiveTest.disposed
 created = ReactiveTest.created
 
 
+class TestCard:
+    id: int
+
+    def __init__(self, id):
+        self.id = id
+
+    def question(self):
+        return ""
+
+    def answer(self):
+        return ""
+
+
 class TestMultipleEventStreams(unittest.TestCase):
     """
     Tests merging multiple streams from different GUIs
@@ -44,3 +57,26 @@ class TestMultipleEventStreams(unittest.TestCase):
 
         res = self.scheduler.start(create)
         print(res.messages)
+
+    def test_reviewer_events(self):
+        events = [
+            on_next(201, ReviewerEvent("x", TestCard(1))),
+            on_next(202, ReviewerEvent("x", TestCard(1))),
+            on_next(203, ReviewerEvent("x", TestCard(2))),
+            on_next(204, ReviewerEvent("x", TestCard(2))),
+            on_next(205, ReviewerEvent("x", TestCard(1))),
+            on_next(206, ReviewerEvent("x", TestCard(1))),
+            on_next(207, ReviewerEvent("x", TestCard(3))),
+        ]
+        xs = self.scheduler.create_hot_observable(events)
+
+        def create():
+            return xs.pipe(timestamp, monitor_activity,
+                           ops.map(lambda x: type(x[0].value).condense(x)))
+
+        res = self.scheduler.start(create)
+        print(res.messages)
+
+
+if __name__ == "__main__":
+    unittest.main()

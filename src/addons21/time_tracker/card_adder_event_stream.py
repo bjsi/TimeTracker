@@ -29,7 +29,7 @@ class CardAdderEventStream(EventStreamBase):
         self.__create_main_stream()
 
     def __create_main_stream(self) -> None:
-        self.main_subj = merge_streams(self.js_event_stream,
+        self.main_subj = merge_streams(self.js_event_stream.main_subj,
                                        timestamp(self.added_note),
                                        timestamp(self.on_init_subj))
 

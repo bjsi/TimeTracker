@@ -25,7 +25,7 @@ mouse_click = JSEventOrigin.mouse_click.name
 class JSEventStream(EventStreamBase):
 
     target_context: Any
-    # Using a List to prevent binding
+    # prevent binding the function to the class
     next_data_func: List[Callable[[str], EventBase]]
 
     mouse_moved: Subject = Subject()
@@ -36,7 +36,7 @@ class JSEventStream(EventStreamBase):
     def __init__(self, context: Any, next_data_func: Callable[[str],
                                                               EventBase]):
         self.target_context = context
-        self.next_data_func[0] = next_data_func
+        self.next_data_func = [next_data_func]
         self.subscribe_to_gui_hooks()
         self.create_main_stream()
 
@@ -96,7 +96,8 @@ document.addEventListener('scroll', throttle(function() {{
                 """)
 
     def get_next_data(self, origin: str):
-        return self.next_data_func[0](origin)
+        data = self.next_data_func[0](origin)
+        return data
 
     def handle_js_message(self, handled: Tuple[bool, Any], message: str,
                           context: Any) -> Tuple[bool, Any]:

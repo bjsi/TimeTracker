@@ -1,8 +1,11 @@
-from typing import List
-from .rx.core.operators.timestamp import Timestamp
-from .event_base import EventBase
-from anki.cards import Card
 from enum import Enum
+from typing import Dict, List
+
+from anki.cards import Card
+
+from .condensed_event import CondensedEvent
+from .event_base import EventBase
+from .rx.core.operators.timestamp import Timestamp
 
 
 class ReviewerEventOrigin(Enum):
@@ -13,20 +16,33 @@ class ReviewerEventOrigin(Enum):
     review_ended = 4
 
 
+class ReviewEndedEvent(EventBase):
+    def __init__(self):
+        super().__init__(origin="review_ended")
+        pass
+
+    @classmethod
+    def custom_window_condition(cls, fst: Timestamp, snd: Timestamp) -> bool:
+        return False
+
+    @classmethod
+    def condense(cls, events: List[Timestamp]):
+        # throw error, shouldn't ever get called
+        pass
+
+
 class ReviewerEvent(EventBase):
 
     card_id: int
     question: str
     answer: str
-    deck_path: List[str]
+    deck_path: List[str]  # TODO
 
     def __init__(self, origin: str, card: Card):
         super().__init__(origin)
         self.card_id = card.id
         self.question = card.question()
         self.answer = card.answer()
-        # TODO
-        # self.deck_path
 
     @classmethod
     def custom_window_condition(cls, fst: Timestamp, snd: Timestamp) -> bool:
@@ -34,18 +50,17 @@ class ReviewerEvent(EventBase):
         return fst.value.card_id != snd.value.card_id
 
     @classmethod
-    def condense(cls, events: List[Timestamp]):
+    def condense(cls, events: List[Timestamp]) -> Dict:
         fst = events[0]
         lst = events[-1]
-        return {
-            "duration": lst.timestamp - fst.timestamp,
+        data = {
             "card_id": fst.value.card_id,
             # TODO: Can this change? If so, diff question and answer
             "question": fst.value.question,
             "answer": fst.value.answer,
-            # TODO
             "deck_path": []
         }
+        return CondensedEvent(fst.timestamp, lst.timestamp, data).to_dict()
 
     def __repr__(self):
         return f"<ReviewerEvent: id: {self.card_id}>"

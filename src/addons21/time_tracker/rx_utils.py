@@ -18,8 +18,8 @@ def pairwise_buffer(obs: Observable) -> Observable:
 # -2-4-6-
 # merge_streams()
 # 1234567
-def merge_streams(*obs) -> Observable:
-    return rx.merge(*obs).pipe(ops.share())
+def merge_streams(*obs):
+    return rx.merge(*obs)
 
 
 # 0011011
@@ -44,7 +44,8 @@ def shift_right(obs):
 
 def window_border_condition_met(pair: List[Timestamp]):
     assert len(pair) == 2
-    return type(pair[0].value).should_window(pair)
+    t = type(pair[0].value)
+    return t.should_window(pair)
 
 
 def monitor_activity(merged):

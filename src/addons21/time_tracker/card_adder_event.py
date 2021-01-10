@@ -1,10 +1,11 @@
-from typing import List
+from typing import List, Dict
 from enum import Enum
 
 import anki
 
 from .event_base import EventBase
 from .rx.core.operators.timestamp import Timestamp
+from .condensed_event import CondensedEvent
 
 
 class CardAdderEventOrigin(Enum):
@@ -25,14 +26,11 @@ class CardAdderEvent(EventBase):
             self.note = note
 
     @classmethod
-    def condense(cls, events: List[Timestamp]):
+    def condense(cls, events: List[Timestamp]) -> Dict:
         fst = events[0]
         lst = events[-1]
-        return {
-            "duration": lst.timestamp - fst.timestamp,
-            "added_note": lst.value.added_note,
-            # TODO: include note data
-        }
+        data = {"added_note": lst.value.added_note}
+        return CondensedEvent(fst.timestamp, lst.timestamp, data).to_dict()
 
     @classmethod
     def custom_window_condition(cls, fst: Timestamp, snd: Timestamp):

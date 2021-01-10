@@ -48,6 +48,6 @@ class EditorEventStream(EventStreamBase):
 
     def __create_main_stream(self):
         self.main_subj = merge_streams(
-            self.js_event_stream, timestamp(self.editor_did_focus_field),
+            self.js_event_stream.main_subj, timestamp(self.editor_did_focus_field),
             timestamp(self.editor_did_init),
             timestamp(self.editor_did_unfocus_field))

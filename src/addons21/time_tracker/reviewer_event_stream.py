@@ -9,11 +9,11 @@ from .js_event_stream import JSEventStream
 from .rx.subject import Subject
 from .rx_utils import merge_streams, timestamp
 from .event_stream_base import EventStreamBase
-from .reviewer_event import ReviewerEvent, ReviewerEventOrigin
+from .reviewer_event import ReviewerEvent, ReviewerEventOrigin, ReviewEndedEvent
 from .event_base import EventBase
 
 
-def get_on_next_data(origin: str) -> EventBase:
+def get_on_next_data(origin: str) -> ReviewerEvent:
     return ReviewerEvent(origin, mw.reviewer.card)
 
 
@@ -54,9 +54,7 @@ class ReviewerEventStream(EventStreamBase):
         self.answered.on_next(ReviewerEvent(origin, card))
 
     def on_review_end(self) -> None:
-        card = mw.reviewer.card
-        origin = ReviewerEventOrigin.review_ended.name
-        self.review_ended.on_next(ReviewerEvent(origin, card))
+        self.review_ended.on_next(ReviewEndedEvent())
 
     def on_question_shown(self, card: Card) -> None:
         origin = ReviewerEventOrigin.question_shown.name
