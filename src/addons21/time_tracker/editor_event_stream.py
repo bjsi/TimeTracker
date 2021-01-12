@@ -7,7 +7,6 @@ from .event_stream_base import EventStreamBase
 from .js_event_stream import JSEventStream
 from .editor_event import EditorEvent, EditorEventOrigin
 from .rx.subject import Subject
-from .qt_window_hooks import monkey_patch_close_event
 
 
 def on_next_data(origin: str) -> EditorEvent:
@@ -20,7 +19,6 @@ class EditorEventStream(EventStreamBase):
     editor_did_focus_field: Subject = Subject()
     editor_did_init: Subject = Subject()
     editor_did_unfocus_field: Subject = Subject()
-    closed: Subject = Subject()
 
     # JS
     js_event_stream: JSEventStream
@@ -34,21 +32,17 @@ class EditorEventStream(EventStreamBase):
         gui_hooks.editor_did_init.append(self.editor_opened)
         gui_hooks.editor_did_focus_field.append(self.field_focused)
         gui_hooks.editor_did_unfocus_field.append(self.field_unfocused)
-        monkey_patch_close_event(aqt.editor.Editor, self.on_closed)
 
     def __create_main_stream(self):
         self.main_subj = merge_streams(
             self.js_event_stream.main_subj,
-            timestamp(self.editor_did_focus_field), timestamp(self.closed),
+            timestamp(self.editor_did_focus_field),
             timestamp(self.editor_did_init),
             timestamp(self.editor_did_unfocus_field))
 
     #################
     # Event Handler #
     #################
-
-    def on_closed(self, _):
-        self.closed.on_next(EditorEvent(EditorEventOrigin.closed.name))
 
     def field_focused(self, note: anki.notes.Note, current_field_idx: int):
         self.editor_did_focus_field.on_next(

@@ -1,7 +1,8 @@
-from typing import Dict, List, Callable
+from typing import Dict, List
 
 from .event_base import EventBase
 from .rx.subject import Subject
+from .addon_event_hook import TimeTrackerAddonEventHook
 
 
 class AddonEventStream:
@@ -10,16 +11,12 @@ class AddonEventStream:
     Can be accessed from other plugins.
     """
     __main_subj: Subject = Subject()
-    events: List[Dict]
-    on_event: List[Callable[[Dict], None]] = []
+    events: List[Dict]  # TODO is this threadsafe? does it need to be?
+    addon_event_hook: TimeTrackerAddonEventHook = TimeTrackerAddonEventHook()
 
     def raise_event(self, event: Dict):
         self.events.append(event)
-        for func in self.on_event:
-            try:
-                func(event)
-            except Exception:
-                pass
+        self.addon_event_hook(event)
 
     def record_event(self, event: EventBase) -> Dict:
         """
